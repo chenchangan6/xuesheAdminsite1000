@@ -45,6 +45,7 @@
         <!-- 菜单管理头部 -->
         <el-header>
             <el-alert type="success" :closable='false' title="菜单管理"></el-alert>
+            <div>{{StringJson}}</div>
         </el-header>
 
         <!-- 菜单编辑 -->
@@ -121,6 +122,13 @@ export default {
         OperationSelect() {
             if (!this.MainMenu.length) {
                 this.OperationType = "1"
+            }
+        },
+        StringJson(){
+            if(this.MainMenu.length){
+                
+              
+               return  this.MainMenu
             }
         },
         childMenu() {
