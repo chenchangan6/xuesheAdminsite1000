@@ -90,7 +90,13 @@
                     <el-button v-if="OperationType==='2'" type="primary" @click="modifyMenu">修改菜单</el-button>
                     <el-button v-if="OperationType==='3'" type="primary" @click="deleteMenu">删除菜单</el-button>
                 </el-form-item>
-
+                <el-form-item>
+                    <hr style="margin:20px 0px;border:0.1em #dcdee6 solid"></hr>
+                    <el-button type="warning" @click="LoadMenu">重新载入菜单</el-button>
+                    <el-button type="success" @click="SaveMenu">保存菜单</el-button>
+                    <el-alert title="保存当前菜单到数据库中，保存会覆盖原有菜单，请慎重。直接关闭当前页面，当前编辑的菜单状态不会被保存。">
+                    </el-alert>
+                </el-form-item>
             </el-form>
         </el-main>
     </el-container>
@@ -98,6 +104,7 @@
 </template>
 
 <script>
+import axios from "axios"
 export default {
     data() {
         return {
@@ -114,65 +121,76 @@ export default {
                 linkto: "zongcheng",
                 mode: "1"
             },
-            MainMenu: [],
-
-        }
+            MainMenu: []
+        };
     },
     computed: {
         OperationSelect() {
             if (!this.MainMenu.length) {
-                this.OperationType = "1"
+                this.OperationType = "1";
             }
         },
-        StringJson(){
-            if(this.MainMenu.length){
-                
-              
-               return  this.MainMenu
+        StringJson() {
+            if (this.MainMenu.length) {
+                return this.MainMenu;
             }
         },
         childMenu() {
-
             if (this.form.MenuType != "Top") {
-                this.form.mode = "2"
+                this.form.mode = "2";
             } else {
-                this.form.mode = "1"
+                this.form.mode = "1";
             }
-
         },
         parentMenu() {
-            let parentMenuName = "请选择父菜单！"
+            let parentMenuName = "请选择父菜单！";
             if (this.MainMenu.length && this.form.mode === "2") {
                 try {
-                    parentMenuName = this.MainMenu[this.form.parentid].title
+                    parentMenuName = this.MainMenu[this.form.parentid].title;
                     if (this.MainMenu[this.form.parentid].mode == 2) {
-                        this.IsChildMenu = true
+                        this.IsChildMenu = true;
                     }
                 } catch {
-                    let MenuArry = this.form.parentid.split("-")
-                    let mainIndex = Number(MenuArry[0])
-                    let childIndex = Number(MenuArry[1])
-                    parentMenuName = this.MainMenu[mainIndex].children[childIndex].title
-                    this.IsChildMenu = true
+                    let MenuArry = this.form.parentid.split("-");
+                    let mainIndex = Number(MenuArry[0]);
+                    let childIndex = Number(MenuArry[1]);
+                    parentMenuName = this.MainMenu[mainIndex].children[childIndex].title;
+                    this.IsChildMenu = true;
                 }
-
             }
-            return parentMenuName
+            return parentMenuName;
         }
-
     },
     methods: {
+        LoadMenu() {
+            axios.get("http://127.0.0.1:5000/adminmainmenu/").then(res => {
 
+                this.MainMenu = res.data.MainMenu
+                this.MesssageBox("success", "载入成功");
+            })
+        },
+        SaveMenu() {
+            axios.post("http://127.0.0.1:5000/adminmainmenu/", {
+                "mainMenu": {
+                    "MainMenu": this.MainMenu
+                }
+            }).then(res => {
+                this.MesssageBox("success", "保存成功");
+            })
+
+        },
         addMenu() {
-            if (this.MainMenu.length === 0 && this.form.MenuType === 'Child') {
-                this.alertMessage('<center>请先创建一个顶级菜单！</center>')
-            } else if (this.form.title === '') {
-                this.alertMessage('<center>请输入菜单名称！</center>')
+            if (this.MainMenu.length === 0 && this.form.MenuType === "Child") {
+                this.alertMessage("<center>请先创建一个顶级菜单！</center>");
+            } else if (this.form.title === "") {
+                this.alertMessage("<center>请输入菜单名称！</center>");
             } else if (this.form.MenuType === "Child" && this.IsChildMenu) {
-                this.alertMessage('<center>当前菜单不能添加子菜单。<p><h4>请选择“顶级导航类菜单“</h4></p></center>')
+                this.alertMessage(
+                    "<center>当前菜单不能添加子菜单。<p><h4>请选择“顶级导航类菜单“</h4></p></center>"
+                );
             } else {
-                let MenuJson
-                if (this.form.mode === '1') {
+                let MenuJson;
+                if (this.form.mode === "1") {
                     MenuJson = {
                         MenuType: this.form.MenuType,
                         title: this.form.title,
@@ -180,10 +198,9 @@ export default {
                         icon: this.form.icon,
                         mode: this.form.mode,
                         children: []
-                    }
-                    this.MainMenu.push(MenuJson)
-                    this.MesssageBox('success', '操作成功！')
-
+                    };
+                    this.MainMenu.push(MenuJson);
+                    this.MesssageBox("success", "操作成功！");
                 } else {
                     MenuJson = {
                         MenuType: this.form.MenuType,
@@ -193,134 +210,141 @@ export default {
                         icon: this.form.icon,
                         linkto: this.form.linkto,
                         mode: this.form.mode
-                    }
-                    if (this.form.MenuType != 'Top') {
-                        let child = this.MainMenu[this.form.parentid].children.length
-                        this.MainMenu[this.form.parentid].children[child] = MenuJson
-                        this.MesssageBox('success', '操作成功！')
+                    };
+                    if (this.form.MenuType != "Top") {
+                        let child = this.MainMenu[this.form.parentid].children.length;
+                        this.MainMenu[this.form.parentid].children[child] = MenuJson;
+                        this.MesssageBox("success", "操作成功！");
                     } else {
-                        this.MainMenu.push(MenuJson)
-                        this.MesssageBox('success', '操作成功！')
+                        this.MainMenu.push(MenuJson);
+                        this.MesssageBox("success", "操作成功！");
                     }
                 }
-                this.MainMenu.push()
+                this.MainMenu.push();
 
                 // console.log(this.MainMenu)
-
             }
         },
         modifyMenu() {
             if (!this.OperationMenuId.length) {
-                this.alertMessage('<center>请选择要修改的菜单！</center>')
+                this.alertMessage("<center>请选择要修改的菜单！</center>");
             } else if (this.OperationMenuId.length === 1) {
-                this.MainMenu[this.OperationMenuId[0]].title = this.form.title
-                this.MainMenu[this.OperationMenuId[0]].icon = this.form.icon
-                this.MainMenu[this.OperationMenuId[0]].number = this.form.number
-                this.OperationMenuId = []
-                this.MesssageBox('success', '操作成功！')
+                this.MainMenu[this.OperationMenuId[0]].title = this.form.title;
+                this.MainMenu[this.OperationMenuId[0]].icon = this.form.icon;
+                this.MainMenu[this.OperationMenuId[0]].number = this.form.number;
+                this.OperationMenuId = [];
+                this.MesssageBox("success", "操作成功！");
                 // console.log(this.MainMenu)
             } else if (this.OperationMenuId.length === 2) {
-                this.MainMenu[this.OperationMenuId[0]].children[this.OperationMenuId[1]].title = this.form.title
-                this.MainMenu[this.OperationMenuId[0]].children[this.OperationMenuId[1]].icon = this.form.icon
-                this.MainMenu[this.OperationMenuId[0]].children[this.OperationMenuId[1]].number = this.form.number
-                this.OperationMenuId = []
-                this.MesssageBox('success', '操作成功！')
+                this.MainMenu[this.OperationMenuId[0]].children[
+                    this.OperationMenuId[1]
+                ].title = this.form.title;
+                this.MainMenu[this.OperationMenuId[0]].children[
+                    this.OperationMenuId[1]
+                ].icon = this.form.icon;
+                this.MainMenu[this.OperationMenuId[0]].children[
+                    this.OperationMenuId[1]
+                ].number = this.form.number;
+                this.OperationMenuId = [];
+                this.MesssageBox("success", "操作成功！");
             }
 
-            this.MainMenu.push()
+            this.MainMenu.push();
         },
         deleteMenu() {
             if (!this.OperationMenuId.length) {
-                this.alertMessage('<center>请选择要删除的菜单！</center>')
+                this.alertMessage("<center>请选择要删除的菜单！</center>");
             } else {
-
-                this.$confirm('此操作将永久删除该文件, 是否继续?', '提示', {
-                    confirmButtonText: '确定',
-                    cancelButtonText: '取消',
-                    type: 'warning'
-                }).then(() => {
-                    console.log(this.OperationMenuId.length)
-                    if (this.OperationMenuId.length === 1) {
-                        // 删除元素的值
-                        this.MainMenu.splice(this.OperationMenuId[0], 1)
-                    } else if (this.OperationMenuId.length === 2) {
-                        // 删除元素的值
-                        this.MainMenu[this.OperationMenuId[0]].children.splice(this.OperationMenuId[1], 1)
-                    }
-                    this.OperationMenuId = []
-                    this.MainMenu.push()
-                    this.MesssageBox('success', '删除成功')
-                }).catch(() => {
-                    this.MesssageBox('info', '已取消删除')
-                })
+                this.$confirm("此操作将永久删除该菜单及其子菜单, 是否继续?", "提示", {
+                        confirmButtonText: "确定",
+                        cancelButtonText: "取消",
+                        type: "warning"
+                    })
+                    .then(() => {
+                        console.log(this.OperationMenuId.length);
+                        if (this.OperationMenuId.length === 1) {
+                            // 删除元素的值
+                            this.MainMenu.splice(this.OperationMenuId[0], 1);
+                        } else if (this.OperationMenuId.length === 2) {
+                            // 删除元素的值
+                            this.MainMenu[this.OperationMenuId[0]].children.splice(
+                                this.OperationMenuId[1],
+                                1
+                            );
+                        }
+                        this.OperationMenuId = [];
+                        this.MainMenu.push();
+                        this.MesssageBox("success", "删除成功");
+                    })
+                    .catch(() => {
+                        this.MesssageBox("info", "已取消删除");
+                    });
 
                 // console.log(this.MainMenu)
             }
-
         },
         //MenuList菜单JSON,MenuId菜单ID
         GetMenu(MenuList, MenuId) {
-            let newMenu
+            let newMenu;
 
-            let MenuArry = MenuId.split("-")
+            let MenuArry = MenuId.split("-");
             if (MenuArry.length > 1) {
-                let mainIndex = Number(MenuArry[0])
-                let childIndex = Number(MenuArry[1])
-                this.OperationMenuId = [mainIndex, childIndex]
-                newMenu = MenuList[mainIndex].children[childIndex]
-                this.form.parentid = newMenu.parentid
+                let mainIndex = Number(MenuArry[0]);
+                let childIndex = Number(MenuArry[1]);
+                this.OperationMenuId = [mainIndex, childIndex];
+                newMenu = MenuList[mainIndex].children[childIndex];
+                this.form.parentid = newMenu.parentid;
             } else {
-                let ID = Number(MenuId)
-                this.OperationMenuId = [ID]
-                newMenu = MenuList[ID]
+                let ID = Number(MenuId);
+                this.OperationMenuId = [ID];
+                newMenu = MenuList[ID];
             }
 
-            this.form.MenuType = newMenu.MenuType
-            this.form.title = newMenu.title
-            this.form.number = newMenu.number
-            this.form.icon = newMenu.icon
-            this.form.linkto = newMenu.linkto
-            this.form.mode = newMenu.mode
-
+            this.form.MenuType = newMenu.MenuType;
+            this.form.title = newMenu.title;
+            this.form.number = newMenu.number;
+            this.form.icon = newMenu.icon;
+            this.form.linkto = newMenu.linkto;
+            this.form.mode = newMenu.mode;
         },
 
-        MesssageBox(type = 'info', message) {
+        MesssageBox(type = "info", message) {
             this.$message({
                 type: type,
                 message: message
-            })
+            });
         },
         alertMessage(message) {
-            this.$alert(message, '操作提示', {
+            this.$alert(message, "操作提示", {
                 dangerouslyUseHTMLString: true
             });
         },
         handleSelece(key, keyPath) {
             if (this.OperationType != "1") {
-                this.GetMenu(this.MainMenu, key)
+                this.GetMenu(this.MainMenu, key);
             } else {
-                this.form.parentid = key
-                this.IsChildMenu = false
+                this.form.parentid = key;
+                this.IsChildMenu = false;
             }
-            console.log(key, keyPath)
+            console.log(key, keyPath);
         },
         handleOpen(key, keyPath) {
-            this.form.parentid = key
-            this.IsChildMenu = false
+            this.form.parentid = key;
+            this.IsChildMenu = false;
             if (this.OperationType != "1") {
-                this.GetMenu(this.MainMenu, key)
+                this.GetMenu(this.MainMenu, key);
             }
 
             // console.log(this.form.parentid, key, keyPath);
         },
         handleClose(key, keyPath) {
-            this.form.parentid = key
-            this.IsChildMenu = false
+            this.form.parentid = key;
+            this.IsChildMenu = false;
             if (this.OperationType != "1") {
-                this.GetMenu(this.MainMenu, key)
+                this.GetMenu(this.MainMenu, key);
             }
             // console.log(key, keyPath);
         }
     }
-}
+};
 </script>
