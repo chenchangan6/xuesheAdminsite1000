@@ -5,19 +5,19 @@
 
     <el-aside>
         <el-alert type="success" :closable='false' title="菜单预览"></el-alert>
-        <el-menu v-if="MainMenu.length" @open="handleOpen" @select="handleSelece" @close="handleClose" @unique-opened="true">
+        <el-menu name='mainMenues' v-if="MainMenu.length" @open="handleOpen" @select="handleSelece" @close="handleClose" @unique-opened="true">
             <label v-for="x,index in MainMenu">
           <!-- 导航类 -->
           <label v-if="x.mode==='1'">
             <el-submenu :index="index+''">
               <template slot="title">
-                <i :class="x.icon"></i>
+                <i :class="'icon font_family '+ x.icon"></i>
                 <span>{{x.title}}</span>
               </template>
               <label v-if="x.children.length">
                 <label v-for="y,z in x.children">
                   <el-menu-item :index="index+'-'+z">
-                    <i :class="y.icon"></i>
+                    <i :class="'icon font_family '+y.icon"></i>
                     <span slot="title">{{y.title}}</span>
                   </el-menu-item>
                 </label>
@@ -27,7 +27,7 @@
             <!-- 导航项 -->
             <label v-else-if="x.mode==='2'">
             <el-menu-item :index="index+''">
-              <i :class="x.icon"></i>
+              <i :class="'icon font_family '+x.icon"></i>
               <span slot="title">{{x.title}}</span>
             </el-menu-item>
           </label>
@@ -45,7 +45,6 @@
         <!-- 菜单管理头部 -->
         <el-header>
             <el-alert type="success" :closable='false' title="菜单管理"></el-alert>
-            <div>{{StringJson}}</div>
         </el-header>
 
         <!-- 菜单编辑 -->
@@ -75,6 +74,7 @@
                 </el-form-item>
                 <el-form-item label="菜单图标：">
                     <el-input v-model="form.icon"></el-input>
+                    <a href="iconfont/AdminIcon" target="_balck">打开预览</a>
                 </el-form-item>
                 <el-form-item label="菜单类型：" v-if="form.MenuType==='Top'">
                     <el-radio-group v-model="form.mode" size="mini">
@@ -91,7 +91,8 @@
                     <el-button v-if="OperationType==='3'" type="primary" @click="deleteMenu">删除菜单</el-button>
                 </el-form-item>
                 <el-form-item>
-                    <hr style="margin:20px 0px;border:0.1em #dcdee6 solid"></hr>
+                    <hr style="margin:20px 0px;border:0.1em #dcdee6 solid">
+                    </hr>
                     <el-button type="warning" @click="LoadMenu">重新载入菜单</el-button>
                     <el-button type="success" @click="SaveMenu">保存菜单</el-button>
                     <el-alert title="保存当前菜单到数据库中，保存会覆盖原有菜单，请慎重。直接关闭当前页面，当前编辑的菜单状态不会被保存。">
@@ -163,21 +164,39 @@ export default {
     },
     methods: {
         LoadMenu() {
-            axios.get("http://127.0.0.1:5000/adminmainmenu/").then(res => {
+            let that = this
+            this.$confirm("此操作将永久覆盖当前操作, 是否继续?", "提示", {
+                confirmButtonText: "确定",
+                cancelButtonText: "取消",
+                type: "warning"
+            }).then(() => {
+                axios.get("http://127.0.0.1:5000/adminmainmenu/").then(res => {
 
-                this.MainMenu = res.data.MainMenu
-                this.MesssageBox("success", "载入成功");
+                    this.MainMenu = res.data.MainMenu
+                    this.MesssageBox("success", "载入成功");
+                }).catch(function (error) {
+                    that.MesssageBox("error", error);
+                })
             })
+
         },
         SaveMenu() {
+            let that = this
+this.$confirm("此操作将永久覆盖当前操作, 是否继续?", "提示", {
+                confirmButtonText: "确定",
+                cancelButtonText: "取消",
+                type: "warning"
+            }).then(() => {
             axios.post("http://127.0.0.1:5000/adminmainmenu/", {
                 "mainMenu": {
                     "MainMenu": this.MainMenu
                 }
             }).then(res => {
                 this.MesssageBox("success", "保存成功");
+            }).catch(function (error) {
+                that.MesssageBox("error", error);
             })
-
+            })
         },
         addMenu() {
             if (this.MainMenu.length === 0 && this.form.MenuType === "Child") {
@@ -326,7 +345,7 @@ export default {
                 this.form.parentid = key;
                 this.IsChildMenu = false;
             }
-            console.log(key, keyPath);
+            // console.log(key, keyPath);
         },
         handleOpen(key, keyPath) {
             this.form.parentid = key;
@@ -348,3 +367,9 @@ export default {
     }
 };
 </script>
+<style>
+#mainMenues
+{
+    font-size: 40px;
+}
+</style>
